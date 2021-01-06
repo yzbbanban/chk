@@ -1,6 +1,6 @@
 {
-  "main": "./contracts/SnatchNormal.sol",
-  "deploy": "./build/contracts/SnatchNormal.json",
+  "main": "./contracts/Snatch.sol",
+  "deploy": "./build/contracts/Snatch.json",
   "compilers": {
     "cfxtruffle": "0.0.8",
     "solc": "0.6.2"

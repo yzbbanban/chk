@@ -70,10 +70,19 @@ contract Snatch{
         uint256 submitAmount,
         uint256 lastAmount,
         uint256 lastTime,
-        uint256 startTime){
+        uint256 startTime,
+        uint256 _durationEndTime,
+        uint256 _durationTime,
+        uint256 _increaseRange,
+        uint256 _totalAmount,
+        uint256 _snatchCount,
+        uint256 _totalSnatchCount
+        ){
             return (snatchInfo.lastOwner,snatchInfo.tempOwner,
             snatchInfo.amount,snatchInfo.submitAmount,snatchInfo.lastAmount,
-            snatchInfo.lastTime,snatchInfo.startTime);
+            snatchInfo.lastTime,snatchInfo.startTime,
+            durationEndTime,durationTime,increaseRange,totalAmount,snatchCount,totalSnatchCount
+            );
     }
 
     function getWinnerAddresses() view public returns(address[] memory _winners){
@@ -103,7 +112,7 @@ contract Snatch{
     }
 
     function snatchPool() payable public{
-        require(msg.value >= 0.01 ether,"Min amount must greate than 0.01");
+        require(msg.value >= 1 ether,"Min amount must greate than 1");
         //get now
         uint256 t = block.timestamp;
         if(snatchInfo.startTime!=0){
@@ -115,7 +124,7 @@ contract Snatch{
         }
         require(snatchInfo.lastOwner!=msg.sender,"Can not repeat snatch");
         require(msg.value >= snatchInfo.lastAmount, "Amount error");
-        uint256 rangeAmount = increaseRange.mul(msg.value).div(100);
+        uint256 rangeAmount = increaseRange.mul(msg.value).div(100).add(msg.value);
         require(msg.value <= rangeAmount, "Amount can not over max amount");
         //add amount
         snatchInfo.amount = snatchInfo.amount.add(msg.value);

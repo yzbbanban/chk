@@ -23,13 +23,13 @@ contract SnatchNormal is IERC777Recipient{
 
     mapping(address => bool) public snatchOwnerRole;
 
-    mapping(address => mapping(uint256 => uint256)) ticketCountMap;
+    mapping(address => mapping(uint256 => uint256)) public ticketCountMap;
 
     using SafeMath for uint256;
 
     address snatchNormalOwner;
 
-    uint256 ticketCount=5;
+    uint256 ticketCount=2;
 
     uint256[] public snatchlist;
 
@@ -119,7 +119,7 @@ contract SnatchNormal is IERC777Recipient{
     }
 
     function addSnatch(
-        uint256 _id,
+        uint256 _tokenId,
         address nftToken,
         address token,
         uint256 submitAmount,
@@ -129,9 +129,10 @@ contract SnatchNormal is IERC777Recipient{
     ) public{
         // 1155
         require(!snatchOwnerRole[msg.sender],"Has a snatch");
-        require(ticketMap[nftToken].balanceOf(msg.sender,_id) > 0,"not nft owner");
-        uint256 cc=ticketCountMap[nftToken][_id];
+        require(ticketMap[nftToken].balanceOf(msg.sender,_tokenId) > 0,"not nft owner");
+        uint256 cc=ticketCountMap[nftToken][_tokenId];
         require(cc<=ticketCount,"Over ticket count");
+        ticketCountMap[nftToken][_tokenId]=ticketCountMap[nftToken][_tokenId].add(1);
         snatchOwnerRole[msg.sender] = false;
         uint256 id = snatchlist.length;
         snatchlist.push(id);

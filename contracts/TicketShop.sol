@@ -103,8 +103,10 @@ contract TicketShop{
     }
 
     function sellTicker(uint256 _tokenId,uint256 _price) public{
+        require(_price >= ticketPrice,"Price must larger than ticket price");
         Shop storage shop = shopMap[_tokenId];
         shop.seller = msg.sender;
+        shop.buyer = address(0);
         shop.price = _price;
         _allTokensIndex[_tokenId] = shopIds.length;
         shopIds.push(_tokenId);
