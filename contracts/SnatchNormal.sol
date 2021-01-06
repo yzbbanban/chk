@@ -78,28 +78,35 @@ contract SnatchNormal is IERC777Recipient{
         _;
     }
 
-    function getSnatchInfo(uint256 _id) view public returns(
-        address _owner,address _lastOwner,address _tempOwner,
-        uint256 _amount,uint256 _submitAmount,uint256 _lastAmount
-        uint256 _startTime,uint256 _lastTime,uint256 _durationTime
-        uint256 _durationEndTime,uint256 _increaseRange,snatchCount
+    function getSnatchTimeInfo(uint256 _id) view public returns(
+        uint256 _startTime,uint256 _lastTime,uint256 _durationTime,
+        uint256 _durationEndTime
     ){
         SnatchInfo memory snatchInfo = snatchInfoMap[_id];
-        uint256[4] t = snatchInfo.time;
-        return(snatchInfo.token,//
-        snatchInfo.owner,//msg.sender
-        snatchInfo.lastOwner,//0
-        snatchInfo.tempOwner,//0
-        snatchInfo.amount,//0
-        snatchInfo.submitAmount,
-        snatchInfo.lastAmount,//-
         //startTime lastTime durationTime durationEndTime
-        snatchInfo.time,//-,-,0,-
-        snatchInfo.increaseRange,//-
-        snatchInfo.snatchCount,//0
-        snatchInfo.totalSnatchCount,//0
-        snatchInfo.totalAmount,//0
-        );
+        uint256[4] memory t = snatchInfo.time;
+        return (t[0],t[1],t[2],t[3]);
+    }
+
+    function getSnatchBaseInfo(uint256 _id) view public returns(
+        address _token,
+        address _owner,address _lastOwner,address _tempOwner,
+        uint256 _amount,uint256 _submitAmount,uint256 _lastAmount,
+        uint256 _increaseRange,uint256 _snatchCount,
+        uint256 _totalSnatchCount,uint256 _totalAmount
+    ){
+        SnatchInfo memory snatchInfo = snatchInfoMap[_id];
+        return(snatchInfo.token,
+        snatchInfo.owner,
+        snatchInfo.lastOwner,
+        snatchInfo.tempOwner,
+        snatchInfo.amount,
+        snatchInfo.submitAmount,
+        snatchInfo.lastAmount,
+        snatchInfo.increaseRange,
+        snatchInfo.snatchCount,
+        snatchInfo.totalSnatchCount,
+        snatchInfo.totalAmount);
     }
     
     function getOwnerSnatch(address _owner) view public returns(uint256[] memory _ids){
@@ -151,10 +158,11 @@ contract SnatchNormal is IERC777Recipient{
     function snatchTokenPool(uint256 _id,uint256 _amount) public{
         SnatchInfo storage snatchInfo = snatchInfoMap[_id];
         require(_amount >= snatchInfo.lastAmount,"Min amount must greate than 0.01");
+        require(snatchInfo.lastOwner!=msg.sender,"Can not repeat snatch");
         uint256 t = block.timestamp;
         uint256[4] storage time = snatchInfo.time;
         if(time[0]!=0){
-            //startTime,0,durationTime,durationEndTime
+            //startTime,lastTime,durationTime,durationEndTime
             require(time[1].add(time[2]) >= t, "Over duration,game over");
             require(time[0].add(time[3]) >= t, "Game is expend over time");
         }else{
@@ -165,11 +173,10 @@ contract SnatchNormal is IERC777Recipient{
         snatchInfo.lastOwner = snatchInfo.tempOwner;
         snatchInfo.tempOwner = msg.sender;
         snatchInfo.lastAmount = _amount;
-        time[2] = t;
-        snatchInfo.count = snatchInfo.count.sub(1);
+        time[1] = t;
         snatchInfo.snatchCount = snatchInfo.snatchCount.add(1);
         snatchInfo.totalSnatchCount = snatchInfo.totalSnatchCount.add(1);
-        snatchInfo.totalAmount = snatchInfo.totalAmount.add(1);
+        snatchInfo.totalAmount = snatchInfo.totalAmount.add(_amount);
         safeTransferFrom(snatchInfo.token,msg.sender,address(this), _amount);
         emit SnatchTokenPool(msg.sender,_amount);
     }
@@ -195,13 +202,13 @@ contract SnatchNormal is IERC777Recipient{
         uint256[4] storage time = snatchInfo.time;
         require(time[1].add(time[2]) < block.timestamp
             || time[0].add(time[3]) < block.timestamp,"Game is not over");
-        //platform 10%
         uint256 reward = snatchInfo.amount;
         IERC777 iERC777 = IERC777(snatchInfo.token);
+        //owner 10%
+        iERC777.send(snatchInfo.owner, reward.mul(10).div(100), "");
         //win 88%
-        iERC777.send(snatchInfo.owner, reward.mul(88).div(100), "");
-        //win 2%
         iERC777.send(snatchInfo.tempOwner,reward.sub(reward.mul(12).div(100)), "");
+        //win 2%
         iERC777.send(msg.sender,reward.sub(reward.mul(2).div(100)), "");
         emit WithdrawTokenPool(snatchInfo.tempOwner,msg.sender,reward.sub(reward.mul(12).div(100)));
         initStatus(_id);

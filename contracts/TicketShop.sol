@@ -51,7 +51,7 @@ contract TicketShop{
 
     address public platform;
 
-    uint256 public ticketPrice = 0.1e18;
+    uint256 public ticketPrice = 100e18;
 
     uint256 rate = 5;
 

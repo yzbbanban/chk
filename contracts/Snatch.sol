@@ -113,6 +113,7 @@ contract Snatch{
             //set time like
             snatchInfo.startTime = t;
         }
+        require(snatchInfo.lastOwner!=msg.sender,"Can not repeat snatch");
         require(msg.value >= snatchInfo.lastAmount, "Amount error");
         uint256 rangeAmount = increaseRange.mul(msg.value).div(100);
         require(msg.value <= rangeAmount, "Amount can not over max amount");
