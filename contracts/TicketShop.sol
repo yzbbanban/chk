@@ -16,6 +16,7 @@ interface TicketNft{
         bytes calldata data
     ) external;
 }
+}
 
 interface Chicken20{
     function addTokens(address _address,uint256 _amount) external;
@@ -28,6 +29,7 @@ interface Invite{
 contract TicketShop{
 
     event BuyTicket(address buyer, uint256 tokenId);
+    event CancelShell(address seller, uint256 tokenId, uint256 price);
     event AddTicketCount(uint256 count);
     event BuySellerTicket(address seller,address buyer,uint256 tokenId,uint256 price);
     event SellTicker(address seller,uint256 tokenId,uint256 price);
@@ -150,6 +152,13 @@ contract TicketShop{
         //addTokens(address _address,uint256 _amount) 
         chicken20.addTokens(msg.sender,5e18);
         emit BuyTicket(msg.sender,_tokenId);
+    }
+
+    function cancelShell(uint256 _tokenId) public{
+        Shop storage shop=shopMap[_tokenId];
+        require(shop.seller == msg.sender,"Only seller");
+        address(uint160(platform)).transfer(shop.price.div(100));
+        emit CancelShell(shop.seller,_tokenId,shop.price);
     }
 
     function addTest() public{

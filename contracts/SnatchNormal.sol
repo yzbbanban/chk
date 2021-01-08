@@ -159,7 +159,7 @@ contract SnatchNormal is IERC777Recipient{
     function snatchTokenPool(uint256 _id,uint256 _amount) public{
         SnatchInfo storage snatchInfo = snatchInfoMap[_id];
         require(_amount >= snatchInfo.lastAmount,"Min amount must greate than 0.01");
-        require(snatchInfo.lastOwner!=msg.sender,"Can not repeat snatch");
+        require(snatchInfo.tempOwner!=msg.sender,"Can not repeat snatch");
         uint256 t = block.timestamp;
         uint256[4] storage time = snatchInfo.time;
         if(time[0]!=0){
