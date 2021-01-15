@@ -1,5 +1,6 @@
 pragma solidity >=0.6.0 <0.8.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./SponsorWhitelistControl.sol";
 
 contract Snatch{
 
@@ -12,9 +13,11 @@ contract Snatch{
 
     address snatchOwner;
 
-    uint256 public durationEndTime = 7*86400;
+    uint256 public durationEndTime = 5*86400;
 
-    uint256 public durationTime = 5*3600;
+    uint256 public durationTime = 1*3600;
+
+    uint256 public suprise = 100;
 
     uint256 public totalAmount;
 
@@ -26,8 +29,10 @@ contract Snatch{
 
     address public platformAddress;
 
-    uint256 public platformRate=10;
-    uint256 public helperRate=5;
+    uint256 public submitAmount = 10e18;
+
+    uint256 public platformRate = 20;
+    uint256 public helperRate = 5;
 
     Winner[] public winners;
 
@@ -39,7 +44,6 @@ contract Snatch{
         address lastOwner;
         address tempOwner;
         uint256 amount;
-        uint256 submitAmount;
         uint256 lastAmount;
         uint256 lastTime;
         uint256 startTime;
@@ -53,18 +57,29 @@ contract Snatch{
         uint256 winTime;
     }
 
+    SponsorWhitelistControl public constant SPONSOR = SponsorWhitelistControl(
+        address(0x0888000000000000000000000000000000000001)
+    );
+
     constructor() public{
         snatchOwner = msg.sender;
         platformAddress = msg.sender;
-        snatchInfo = SnatchInfo(address(0),address(0),0,1e18,0,0,0);
+        snatchInfo = SnatchInfo(address(0),address(0),0,submitAmount,0,0);
+        // register all users as sponsees
+        address[] memory users = new address[](1);
+        users[0] = address(0);
+        SPONSOR.addPrivilege(users);
     }
+
+    
 
     modifier onlyOwner(){
         require(msg.sender==snatchOwner,"not owner");
         _;
     }
 
-    function getCurrentSnatchInfo() view public returns(address lastOwner,
+    function getCurrentSnatchInfo() view public returns(
+        address lastOwner,
         address tempOwner,
         uint256 amount,
         uint256 submitAmount,
@@ -79,7 +94,7 @@ contract Snatch{
         uint256 _totalSnatchCount
         ){
             return (snatchInfo.lastOwner,snatchInfo.tempOwner,
-            snatchInfo.amount,snatchInfo.submitAmount,snatchInfo.lastAmount,
+            snatchInfo.amount,submitAmount,snatchInfo.lastAmount,
             snatchInfo.lastTime,snatchInfo.startTime,
             durationEndTime,durationTime,increaseRange,totalAmount,snatchCount,totalSnatchCount
             );
@@ -89,8 +104,16 @@ contract Snatch{
         return winnerAddresses;
     }
 
+    function setSubmitM(uint256 _amount) public onlyOwner(){
+        submitAmount = _amount;
+    }
+
     function setPlatform(address _platform) public onlyOwner(){
         platformAddress = _platform;
+    }
+
+    function setSuprise(uint256 _suprise) public onlyOwner(){
+        suprise = _suprise;
     }
     
     function setDuration(uint256 _durationTime,uint256 _durationEndTime) public onlyOwner(){
@@ -112,7 +135,6 @@ contract Snatch{
     }
 
     function snatchPool() payable public{
-        require(msg.value >= 1 ether,"Min amount must greate than 1");
         //get now
         uint256 t = block.timestamp;
         if(snatchInfo.startTime!=0){
@@ -122,18 +144,23 @@ contract Snatch{
             //set time like
             snatchInfo.startTime = t;
         }
-        require(snatchInfo.tempOwner!=msg.sender,"Can not repeat snatch");
-        require(msg.value >= snatchInfo.lastAmount, "Amount error");
+        // require(snatchInfo.tempOwner!=msg.sender,"Can not repeat snatch");
+        //cal amounnt
+        require(msg.value >= 10 ether,"Min amount must greate than 10");
         uint256 rangeAmount = increaseRange.mul(msg.value).div(100).add(msg.value);
         require(msg.value <= rangeAmount, "Amount can not over max amount");
         // add count
         snatchCount = snatchCount.add(1);
+        //check amount
+        uint256 nowAmount = calcRangeAmount(snatchInfo.lastAmount,increaseRange,snatchCount);
+        require(msg.value >= nowAmount,"Amount error");
+
         uint256 reward = 0;
-        //todo
-        if(snatchCount == 5){
+        //彩蛋，单轮中会有
+        if(snatchCount == suprise){
             //send 5%
-            reward = snatchInfo.amount;
-            transferEth(platformAddress, reward.mul(5).div(100),"Transfer snatch error");
+            reward = snatchInfo.amount.mul(5).div(100);
+            transferEth(platformAddress, reward,"Transfer snatch error");
         }
         addSnatchTotalCount();
         addSnatchTotalAmount(msg.value);
@@ -179,7 +206,7 @@ contract Snatch{
                                     .sub(reward.mul(helperRate).div(100));
         emit WithdrawPool(snatchInfo.tempOwner,
                             msg.sender,
-                            reward.sub(reward.mul(48).div(100)));
+                            reward.sub(reward.mul(45).div(100)));
         initStatus();
     }
 
@@ -201,7 +228,7 @@ contract Snatch{
         winnerMap[snatchInfo.tempOwner].push(winner);
         snatchInfo.lastOwner = address(0);
         snatchInfo.tempOwner = address(0);
-        snatchInfo.lastAmount = 1e18;
+        snatchInfo.lastAmount = submitAmount;
         snatchInfo.lastTime = 0;
         snatchInfo.startTime = 0;
         snatchCount = 0;
@@ -212,5 +239,11 @@ contract Snatch{
         (bool res, ) = address(uint160(_address)).call{value:_value}("");
         require(res,message);
     }
+
+    function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count) pure public returns(uint256){
+        return _amount.add(_amount.mul(_rate.mul(_count.div(100)).div(100)));
+    }
+
+    receive() external payable {}
 
 }

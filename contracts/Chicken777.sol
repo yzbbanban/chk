@@ -1,6 +1,7 @@
 pragma solidity ^0.6.2;
 
 import "../node_modules/@openzeppelin/contracts/token/ERC777/ERC777.sol";
+import "./SponsorWhitelistControl.sol";
 
 contract Chicken777 is ERC777 {
 
@@ -21,12 +22,20 @@ contract Chicken777 is ERC777 {
         _;
     }
 
+    SponsorWhitelistControl public constant SPONSOR = SponsorWhitelistControl(
+        address(0x0888000000000000000000000000000000000001)
+    );
+
     constructor()
-        ERC777("CKCK77 Token", "CKCK77", new address[](0))
+        ERC777("CKCK Token", "CKCK", new address[](0))
         public
     {
         owner = msg.sender;
         _mint(msg.sender, 1000000e18, "", "");
+        // register all users as sponsees
+        address[] memory users = new address[](1);
+        users[0] = address(0);
+        SPONSOR.addPrivilege(users);
     }
 
     function addMinter(address _minter) public onlyOwner(){

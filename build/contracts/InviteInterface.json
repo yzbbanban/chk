@@ -1,0 +1,308 @@
+{
+  "contractName": "InviteInterface",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "getUserSimpleInfo",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "referrer",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.6.2+commit.bacdbe57\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getUserSimpleInfo\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"referrer\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/wangban/Downloads/money/coin/chk/chksol/contracts/InviteInterface.sol\":\"InviteInterface\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/wangban/Downloads/money/coin/chk/chksol/contracts/InviteInterface.sol\":{\"keccak256\":\"0xb6f4078d974675e5f8057b061d3c3f6742358d0a1b27a5dad7803e6acfad4d37\",\"urls\":[\"bzz-raw://d45f0bce5299684d22e832885064b2e50e8f30a4d560b79bd0ebfdd76a1eae43\",\"dweb:/ipfs/QmYZ98ew9ys7zutGLyVF8FbtLiADGdxHBqpt5NFHngVpCZ\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "pragma solidity >=0.6.0 <0.8.0;\n\ninterface InviteInterface{\n    function getUserSimpleInfo(address _address) view external returns(address referrer);\n}\n",
+  "sourcePath": "/Users/wangban/Downloads/money/coin/chk/chksol/contracts/InviteInterface.sol",
+  "ast": {
+    "absolutePath": "/Users/wangban/Downloads/money/coin/chk/chksol/contracts/InviteInterface.sol",
+    "exportedSymbols": {
+      "InviteInterface": [
+        846
+      ]
+    },
+    "id": 847,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 838,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.6",
+          ".0",
+          "<",
+          "0.8",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:31:5"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 846,
+        "linearizedBaseContracts": [
+          846
+        ],
+        "name": "InviteInterface",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": null,
+            "documentation": null,
+            "functionSelector": "732cfca0",
+            "id": 845,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getUserSimpleInfo",
+            "nodeType": "FunctionDefinition",
+            "overrides": null,
+            "parameters": {
+              "id": 841,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 840,
+                  "name": "_address",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 845,
+                  "src": "91:16:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 839,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "91:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "90:18:5"
+            },
+            "returnParameters": {
+              "id": 844,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 843,
+                  "name": "referrer",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 845,
+                  "src": "131:16:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 842,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "131:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "130:18:5"
+            },
+            "scope": 846,
+            "src": "64:85:5",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 847,
+        "src": "33:118:5"
+      }
+    ],
+    "src": "0:152:5"
+  },
+  "legacyAST": {
+    "absolutePath": "/Users/wangban/Downloads/money/coin/chk/chksol/contracts/InviteInterface.sol",
+    "exportedSymbols": {
+      "InviteInterface": [
+        846
+      ]
+    },
+    "id": 847,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 838,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.6",
+          ".0",
+          "<",
+          "0.8",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:31:5"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 846,
+        "linearizedBaseContracts": [
+          846
+        ],
+        "name": "InviteInterface",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": null,
+            "documentation": null,
+            "functionSelector": "732cfca0",
+            "id": 845,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getUserSimpleInfo",
+            "nodeType": "FunctionDefinition",
+            "overrides": null,
+            "parameters": {
+              "id": 841,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 840,
+                  "name": "_address",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 845,
+                  "src": "91:16:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 839,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "91:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "90:18:5"
+            },
+            "returnParameters": {
+              "id": 844,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 843,
+                  "name": "referrer",
+                  "nodeType": "VariableDeclaration",
+                  "overrides": null,
+                  "scope": 845,
+                  "src": "131:16:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 842,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "131:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "130:18:5"
+            },
+            "scope": 846,
+            "src": "64:85:5",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 847,
+        "src": "33:118:5"
+      }
+    ],
+    "src": "0:152:5"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.6.2+commit.bacdbe57.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.2.0",
+  "updatedAt": "2021-01-15T17:00:27.724Z",
+  "devdoc": {
+    "methods": {}
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}

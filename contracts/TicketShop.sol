@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777.sol";
 import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
+import "./SponsorWhitelistControl.sol";
+
 
 interface TicketNft{
     function mint(address player) external returns (uint256);
@@ -15,7 +17,6 @@ interface TicketNft{
         uint256 amount,
         bytes calldata data
     ) external;
-}
 }
 
 interface Chicken20{
@@ -73,6 +74,10 @@ contract TicketShop{
     // keccak256("ERC777TokensRecipient")
     bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH =
         0xb281fc8c12954d22544db45de3159a39272895b169a852b314f9cc762e44c53b;
+
+    SponsorWhitelistControl public constant SPONSOR = SponsorWhitelistControl(
+        address(0x0888000000000000000000000000000000000001)
+    );
 
     constructor(address _ticketNft, Invite _invite, Chicken20 _chicken20) public{
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));

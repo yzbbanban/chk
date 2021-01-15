@@ -1,8 +1,10 @@
 pragma solidity >=0.6.0 <0.8.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./SponsorWhitelistControl.sol";
+import "./InviteInterface.sol";
 
-contract Invite{
+contract Invite is InviteInterface{
     
     event Register(address owner, uint256 uid);
     
@@ -18,6 +20,10 @@ contract Invite{
         uint256 referrerId;
         uint256 createTime;
     }
+
+    SponsorWhitelistControl public constant SPONSOR = SponsorWhitelistControl(
+        address(0x0888000000000000000000000000000000000001)
+    );
     
     constructor(address _owner, address _first) public{
         owner = _owner;
@@ -30,6 +36,11 @@ contract Invite{
         //add user
         users.push(firstUser);
         userIdMap[1]=_first;
+
+        // register all users as sponsees
+        address[] memory users = new address[](1);
+        users[0] = address(0);
+        SPONSOR.addPrivilege(users);
     }
     
     modifier checkOwner(){
@@ -46,7 +57,7 @@ contract Invite{
         return (user.owner, user.referrer,user.referrerId, user.id, user.createTime);
     }
     
-    function getUserSimpleInfo(address _address) view public returns(address referrer){
+    function getUserSimpleInfo(address _address) view external override returns(address referrer){
         User memory user=userMap[_address];
         return (user.referrer);
     }

@@ -5,7 +5,7 @@ import './Ticket1155Nft.sol';
 import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777.sol";
 import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
-
+import "./SponsorWhitelistControl.sol";
 
 contract SnatchNormal is IERC777Recipient{
 
@@ -67,10 +67,18 @@ contract SnatchNormal is IERC777Recipient{
     bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH =
         0xb281fc8c12954d22544db45de3159a39272895b169a852b314f9cc762e44c53b;
 
+    SponsorWhitelistControl public constant SPONSOR = SponsorWhitelistControl(
+        address(0x0888000000000000000000000000000000000001)
+    );
+
     constructor(address _nftToken) public {
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
         snatchNormalOwner = msg.sender;
         ticketMap[_nftToken] = Ticket1155Nft(_nftToken);
+        // register all users as sponsees
+        address[] memory users = new address[](1);
+        users[0] = address(0);
+        SPONSOR.addPrivilege(users);
     }
 
     modifier onlySnatchNormalOwner(){
@@ -130,9 +138,11 @@ contract SnatchNormal is IERC777Recipient{
         // 1155
         require(!snatchOwnerRole[msg.sender],"Has a snatch");
         require(ticketMap[nftToken].balanceOf(msg.sender,_tokenId) > 0,"not nft owner");
+        IERC777 iERC777 = IERC777(token);
         uint256 cc=ticketCountMap[nftToken][_tokenId];
-        require(cc<=ticketCount,"Over ticket count");
+        require(cc<ticketCount,"Over ticket count");
         ticketCountMap[nftToken][_tokenId]=ticketCountMap[nftToken][_tokenId].add(1);
+        require(iERC777.balanceOf(msg.sender) >= submitAmount,"Owner donot have enough balance");
         snatchOwnerRole[msg.sender] = false;
         uint256 id = snatchlist.length;
         snatchlist.push(id);
@@ -156,10 +166,19 @@ contract SnatchNormal is IERC777Recipient{
         emit AddSnatch(msg.sender,id);
     }
 
+    function getSnatchList() view public returns(uint256[] memory){
+        return snatchlist;
+    }
+
     function snatchTokenPool(uint256 _id,uint256 _amount) public{
         SnatchInfo storage snatchInfo = snatchInfoMap[_id];
-        require(_amount >= snatchInfo.lastAmount,"Min amount must greate than 0.01");
-        require(snatchInfo.tempOwner!=msg.sender,"Can not repeat snatch");
+        //+1
+        snatchInfo.snatchCount = snatchInfo.snatchCount.add(1);
+        uint256 nowAmount = calcRangeAmount(snatchInfo.lastAmount,
+                                    snatchInfo.increaseRange,
+                                    snatchInfo.snatchCount);
+        require(_amount >= nowAmount,"SnatchTokenPool Amount error");
+        // require(snatchInfo.tempOwner!=msg.sender,"Can not repeat snatch");
         uint256 t = block.timestamp;
         uint256[4] storage time = snatchInfo.time;
         if(time[0]!=0){
@@ -175,7 +194,6 @@ contract SnatchNormal is IERC777Recipient{
         snatchInfo.tempOwner = msg.sender;
         snatchInfo.lastAmount = _amount;
         time[1] = t;
-        snatchInfo.snatchCount = snatchInfo.snatchCount.add(1);
         snatchInfo.totalSnatchCount = snatchInfo.totalSnatchCount.add(1);
         snatchInfo.totalAmount = snatchInfo.totalAmount.add(_amount);
         safeTransferFrom(snatchInfo.token,msg.sender,address(this), _amount);
@@ -192,9 +210,11 @@ contract SnatchNormal is IERC777Recipient{
         uint256 reward = snatchInfo.amount;
 
         IERC777 iERC777 = IERC777(snatchInfo.token);
+        //owner 10%
         iERC777.send(snatchInfo.owner, reward.mul(10).div(100), "");
-        iERC777.send(snatchInfo.tempOwner,reward.sub(reward.mul(10).div(100)), "");
-        emit WithdrawTokenPool(msg.sender,msg.sender,reward.sub(reward.mul(10).div(100)));
+        //50%
+        iERC777.send(snatchInfo.tempOwner,reward.mul(50).div(100), "");
+        emit WithdrawTokenPool(msg.sender,msg.sender,reward.mul(50).div(100));
         initStatus(_id);
     }
 
@@ -207,11 +227,11 @@ contract SnatchNormal is IERC777Recipient{
         IERC777 iERC777 = IERC777(snatchInfo.token);
         //owner 10%
         iERC777.send(snatchInfo.owner, reward.mul(10).div(100), "");
-        //win 88%
-        iERC777.send(snatchInfo.tempOwner,reward.sub(reward.mul(12).div(100)), "");
-        //win 2%
-        iERC777.send(msg.sender,reward.sub(reward.mul(2).div(100)), "");
-        emit WithdrawTokenPool(snatchInfo.tempOwner,msg.sender,reward.sub(reward.mul(12).div(100)));
+        //win 50%
+        iERC777.send(snatchInfo.tempOwner,reward.mul(45).div(100), "");
+        //win 5%
+        iERC777.send(msg.sender,reward.mul(5).div(100),"");
+        emit WithdrawTokenPool(snatchInfo.tempOwner,msg.sender,reward.mul(45).div(100));
         initStatus(_id);
     }
 
@@ -223,12 +243,16 @@ contract SnatchNormal is IERC777Recipient{
         winners[_id].push(winner);
         snatchInfo.lastOwner = address(0);
         snatchInfo.tempOwner = address(0);
-        snatchInfo.amount = 0;
+        snatchInfo.amount = snatchInfo.amount.mul(40).div(100);
         snatchInfo.lastAmount = snatchInfo.submitAmount;
         uint256[4] storage time = snatchInfo.time;
         time[0] = 0;
         time[1] = 0;
         snatchInfo.snatchCount = 0;
+    }
+
+    function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count) view public returns(uint256){
+        return _amount.add(_amount.mul(_rate.mul(_count.div(100)).div(100)));
     }
    
     function safeTransferFrom(address token, address from, address to, uint value) internal {

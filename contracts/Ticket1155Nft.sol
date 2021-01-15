@@ -3,6 +3,7 @@ pragma solidity ^0.6.2;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "./SponsorWhitelistControl.sol";
 
 library Strings {
   // via https://github.com/oraclize/ethereum-api/blob/master/oraclizeAPI_0.5.sol
@@ -105,9 +106,18 @@ contract Ticket1155Nft is ERC1155 {
         _;
     }
 
+    SponsorWhitelistControl public constant SPONSOR = SponsorWhitelistControl(
+        address(0x0888000000000000000000000000000000000001)
+    );
+
     constructor() public ERC1155("http://180.76.116.191:18756/v1/nft/brbr/") {
         owner=msg.sender;
         baseUri = "http://180.76.116.191:18756/v1/nft/brbr/";
+
+        // register all users as sponsees
+        address[] memory users = new address[](1);
+        users[0] = address(0);
+        SPONSOR.addPrivilege(users);
     }
 
     function addMiner(address _miner) public onlyOwner(){
@@ -138,7 +148,6 @@ contract Ticket1155Nft is ERC1155 {
     function totalSupply() public view returns (uint256) {
         return _allTokens.length;
     }
-
 
     function safeTransferFrom(
         address from,
