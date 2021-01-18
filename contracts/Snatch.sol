@@ -1,6 +1,7 @@
 pragma solidity >=0.6.0 <0.8.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./SponsorWhitelistControl.sol";
+import "./InviteInterface.sol";
 
 contract Snatch{
 
@@ -17,13 +18,15 @@ contract Snatch{
 
     uint256 public durationTime = 1*3600;
 
-    uint256 public suprise = 100;
+    uint256 public surprise = 100;
 
     uint256 public totalAmount;
 
     uint256 public snatchCount;
 
     uint256 public totalSnatchCount;
+
+    uint256 public invitePercent = 10;
 
     uint256 public increaseRange = 20;
 
@@ -34,11 +37,21 @@ contract Snatch{
     uint256 public platformRate = 20;
     uint256 public helperRate = 5;
 
+    mapping(address => Reward) rewards;
+
+    InviteInterface invite;
+
     Winner[] public winners;
 
     mapping(address => Winner[]) public winnerMap;
 
     SnatchInfo snatchInfo;
+
+    struct Reward{
+        address owner;
+        uint256 inviteReward;
+        uint256 surprise;
+    }
 
     struct SnatchInfo{
         address lastOwner;
@@ -61,17 +74,16 @@ contract Snatch{
         address(0x0888000000000000000000000000000000000001)
     );
 
-    constructor() public{
+    constructor(InviteInterface _invite) public{
         snatchOwner = msg.sender;
         platformAddress = msg.sender;
         snatchInfo = SnatchInfo(address(0),address(0),0,submitAmount,0,0);
+        invite = _invite;
         // register all users as sponsees
         address[] memory users = new address[](1);
         users[0] = address(0);
         SPONSOR.addPrivilege(users);
     }
-
-    
 
     modifier onlyOwner(){
         require(msg.sender==snatchOwner,"not owner");
@@ -82,7 +94,7 @@ contract Snatch{
         address lastOwner,
         address tempOwner,
         uint256 amount,
-        uint256 submitAmount,
+        uint256 _submitAmount,
         uint256 lastAmount,
         uint256 lastTime,
         uint256 startTime,
@@ -108,12 +120,19 @@ contract Snatch{
         submitAmount = _amount;
     }
 
+    function setInvitePercent(uint256 _invitePercent) public onlyOwner(){
+        invitePercent = _invitePercent;
+    }
+    function setInviteInterface(InviteInterface _invite) public onlyOwner(){
+        invite = _invite;
+    }
+
     function setPlatform(address _platform) public onlyOwner(){
         platformAddress = _platform;
     }
 
-    function setSuprise(uint256 _suprise) public onlyOwner(){
-        suprise = _suprise;
+    function setSurprise(uint256 _surprise) public onlyOwner(){
+        surprise = _surprise;
     }
     
     function setDuration(uint256 _durationTime,uint256 _durationEndTime) public onlyOwner(){
@@ -134,6 +153,11 @@ contract Snatch{
         return block.timestamp;
     }
 
+    function getRewards(address _owner) view public returns(uint256 _inviteReward,uint256 _surprise){
+        Reward memory re = rewards[_owner];
+        return (re.inviteReward,re.surprise);
+    }
+
     function snatchPool() payable public{
         //get now
         uint256 t = block.timestamp;
@@ -152,20 +176,27 @@ contract Snatch{
         // add count
         snatchCount = snatchCount.add(1);
         //check amount
-        uint256 nowAmount = calcRangeAmount(snatchInfo.lastAmount,increaseRange,snatchCount);
+        uint256 nowAmount = calcRangeAmount(submitAmount,increaseRange,snatchCount,surprise);
         require(msg.value >= nowAmount,"Amount error");
-
+        //发放推荐
+        uint256 rest = checkInvite(msg.sender,msg.value);
         uint256 reward = 0;
         //彩蛋，单轮中会有
-        if(snatchCount == suprise){
+        if(snatchCount.div(surprise)>=1){
             //send 5%
-            reward = snatchInfo.amount.mul(5).div(100);
-            transferEth(platformAddress, reward,"Transfer snatch error");
+            //保留小数4位
+            uint256 rem = snatchInfo.amount.div(1e14).mul(1e14);
+            reward = rem.mul(5).div(100);
+            reward = snatchInfo.amount.sub(rem).add(reward);
+            //发给用户
+            // transferEth(msg.sender, reward,"Transfer snatch error");
+            Reward storage senderReward = rewards[msg.sender];
+            senderReward.surprise = senderReward.surprise.add(reward);
         }
         addSnatchTotalCount();
         addSnatchTotalAmount(msg.value);
         //add amount
-        snatchInfo.amount = snatchInfo.amount.add(msg.value).sub(reward);
+        snatchInfo.amount = snatchInfo.amount.add(msg.value).sub(reward).sub(rest);
         snatchInfo.lastOwner = snatchInfo.tempOwner;
         snatchInfo.tempOwner = msg.sender;
         snatchInfo.lastAmount = msg.value;
@@ -173,10 +204,26 @@ contract Snatch{
         emit SnatchPool(msg.sender,msg.value);
     }
 
+    function checkInvite(address _sender,uint256 _value) internal returns(uint256 _restAmount){
+        address parent = invite.getUserSimpleInfo(_sender);
+        uint256 am = 0;
+        if(parent != address(0)){
+            am = invitePercent.mul(_value).div(100);
+            Reward storage rewardP = rewards[parent];
+            rewardP.inviteReward = rewardP.inviteReward.add(am);
+            // transferEth(parent, 
+            //     am,
+            //     "Transfer invite error");
+        }
+        //发放给推荐的钱
+        return am;
+    }
+
     function withdrawPool() public{
         require(snatchInfo.tempOwner == msg.sender,"Not winner");
         require(snatchInfo.lastTime.add(durationTime) < block.timestamp
             || snatchInfo.startTime.add(durationEndTime) < block.timestamp,"Game is not over");
+        require(snatchInfo.tempOwner!=address(0),"Already withdraw");
         uint256 reward = snatchInfo.amount;
         //r*10%
         transferEth(platformAddress, reward.mul(platformRate).div(100),"Transfer platform error");
@@ -193,6 +240,7 @@ contract Snatch{
     function otherWithdraw() public {
         require(snatchInfo.lastTime.add(durationTime) < block.timestamp
             || snatchInfo.startTime.add(durationEndTime) < block.timestamp,"Game is not over");
+        require(snatchInfo.tempOwner!=address(0),"Other already withdraw");
         uint256 reward = snatchInfo.amount;
         //platform 10%
         transferEth(platformAddress, reward.mul(platformRate).div(100),"Other transfer platform error");
@@ -210,6 +258,14 @@ contract Snatch{
         initStatus();
     }
 
+    function withdrawReward(address _owner) public{
+        Reward storage reward = rewards[_owner];
+        uint256 r = reward.inviteReward.add(reward.surprise);
+        require(r > 0,"No reward");
+        reward.inviteReward = 0;
+        reward.surprise = 0;
+        transferEth(_owner, r, "transfer reward error");
+    }
 
     function addSnatchTotalAmount(uint256 _amount) internal{
         totalAmount = totalAmount.add(_amount);
@@ -240,8 +296,8 @@ contract Snatch{
         require(res,message);
     }
 
-    function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count) pure public returns(uint256){
-        return _amount.add(_amount.mul(_rate.mul(_count.div(100)).div(100)));
+    function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count,uint256 _sCount) pure public returns(uint256){
+        return _amount.add(_amount.mul(_rate.mul(_count.div(_sCount))).div(100));
     }
 
     receive() external payable {}

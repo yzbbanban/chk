@@ -96,6 +96,8 @@ contract Ticket1155Nft is ERC1155 {
 
     mapping(address => bool) public miners;
 
+    mapping(uint256 => address[]) public ownerOfAddress;
+
     modifier onlyOwner(){
         require(owner==msg.sender,"Not owner");
         _;
@@ -110,9 +112,9 @@ contract Ticket1155Nft is ERC1155 {
         address(0x0888000000000000000000000000000000000001)
     );
 
-    constructor() public ERC1155("http://180.76.116.191:18756/v1/nft/brbr/") {
+    constructor() public ERC1155("http://nft.yzbbanban.com:18756/v1/nft/brbr/") {
         owner=msg.sender;
-        baseUri = "http://180.76.116.191:18756/v1/nft/brbr/";
+        baseUri = "http://nft.yzbbanban.com:18756/v1/nft/brbr/";
 
         // register all users as sponsees
         address[] memory users = new address[](1);
@@ -131,6 +133,14 @@ contract Ticket1155Nft is ERC1155 {
     function setBaseUri(string memory _baseUri) public onlyOwner(){
         super._setURI(_baseUri);
         baseUri = _baseUri;
+    }
+
+    function isTokenOwner(address _owner,uint256 _id) view public returns(bool){
+        return balanceOf(_owner,_id)>0;
+    }
+
+    function ownerOf(uint256 _id) view public returns(address[] memory){
+        return ownerOfAddress[_id];
     }
 
     function tokensOf(address _owner) view public returns(uint256[] memory _tokens){
@@ -191,6 +201,11 @@ contract Ticket1155Nft is ERC1155 {
     function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
         _ownedTokensIndex[tokenId] = _ownedTokens[to].length;
         _ownedTokens[to].push(tokenId);
+        address[] storage addr = ownerOfAddress[tokenId];
+        if(addr.length>0){
+            addr.pop();
+        }
+        addr.push(to);
     }
 
     /**

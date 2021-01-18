@@ -27,7 +27,7 @@ contract Chicken777 is ERC777 {
     );
 
     constructor()
-        ERC777("CKCK Token", "CKCK", new address[](0))
+        ERC777("CKCK2 Token", "CKCK2", new address[](0))
         public
     {
         owner = msg.sender;

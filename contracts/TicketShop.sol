@@ -19,7 +19,7 @@ interface TicketNft{
     ) external;
 }
 
-interface Chicken20{
+interface Chicken20 is IERC777{
     function addTokens(address _address,uint256 _amount) external;
 }
 
@@ -85,27 +85,33 @@ contract TicketShop{
         ticketNft = TicketNft(_ticketNft);
         invite = _invite;
         chicken20 = _chicken20;
+        platform = msg.sender;
+
+        // register all users as sponsees
+        address[] memory users = new address[](1);
+        users[0] = address(0);
+        SPONSOR.addPrivilege(users);
     }
 
     function getShopItems() view public returns(uint256[] memory _shopIds){
         return shopIds;
     }
 
-    function setTokenParam(address _ticketNft, Invite _invite, Chicken20 _chicken20) public{
+    function setTokenParam(TicketNft _ticketNft, Invite _invite, Chicken20 _chicken20) public onlyOwner(){
         ticketNft = TicketNft(_ticketNft);
         invite = _invite;
         chicken20 = _chicken20;
     }
 
-    function setTickPrice(uint256 _ticketPrice) public onlyOwner{
+    function setTickPrice(uint256 _ticketPrice) public onlyOwner(){
         ticketPrice = _ticketPrice;
     }
 
-    function setPlatForm(address _platform) public onlyOwner{
+    function setPlatForm(address _platform) public onlyOwner(){
         platform = _platform;
     }
 
-    function setPlatFormRate(uint256 _rate) public onlyOwner{
+    function setPlatFormRate(uint256 _rate) public onlyOwner(){
         rate = _rate;
     }
 
@@ -139,11 +145,12 @@ contract TicketShop{
 
     function buyTicket() payable public{
         require(totalTicket > 0,"No ticket, sell out");
+        require(msg.value == ticketPrice,"No ticket, sell out");
         // nft 1155
         uint256 _tokenId = ticketNft.mint(msg.sender);
         totalTicket = totalTicket.sub(1);
+        uint256 am = 0;
         address parent = invite.getUserSimpleInfo(msg.sender);
-        uint256 am;
         if(parent!=address(0)){
             transferEth(parent,ticketPrice.mul(6).div(100));
             address grandparent = invite.getUserSimpleInfo(parent);
@@ -154,7 +161,6 @@ contract TicketShop{
             }
         }
         transferEth(platform,ticketPrice.mul(100-am).div(100));
-        //addTokens(address _address,uint256 _amount) 
         chicken20.addTokens(msg.sender,5e18);
         emit BuyTicket(msg.sender,_tokenId);
     }
@@ -162,15 +168,10 @@ contract TicketShop{
     function cancelShell(uint256 _tokenId) public{
         Shop storage shop=shopMap[_tokenId];
         require(shop.seller == msg.sender,"Only seller");
-        address(uint160(platform)).transfer(shop.price.div(100));
+        transfer1155(address(this),msg.sender,_tokenId);
         emit CancelShell(shop.seller,_tokenId,shop.price);
+        _removeTokenFromShop(_tokenId);
     }
-
-    function addTest() public{
-        chicken20.addTokens(msg.sender,5e18);
-        uint256 _tokenId = ticketNft.mint(msg.sender);
-    }
-
 
     function addTicketCount(uint256 _count) public onlyOwner{
         totalTicket= totalTicket.add(_count);

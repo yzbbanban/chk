@@ -203,6 +203,7 @@ contract SnatchNormal is IERC777Recipient{
     function withdrawPool(uint256 _id) public{
         SnatchInfo storage snatchInfo =snatchInfoMap[_id];
         require(snatchInfo.tempOwner == msg.sender,"Not winner");
+        require(snatchInfo.tempOwner!=address(0),"Already withdraw");
         uint256[4] storage time = snatchInfo.time;
         require(time[1].add(time[2]) < block.timestamp
             || time[0].add(time[3]) < block.timestamp, "Game is not over");
@@ -223,6 +224,7 @@ contract SnatchNormal is IERC777Recipient{
         uint256[4] storage time = snatchInfo.time;
         require(time[1].add(time[2]) < block.timestamp
             || time[0].add(time[3]) < block.timestamp,"Game is not over");
+        require(snatchInfo.tempOwner!=address(0),"Already withdraw");
         uint256 reward = snatchInfo.amount;
         IERC777 iERC777 = IERC777(snatchInfo.token);
         //owner 10%
@@ -251,8 +253,8 @@ contract SnatchNormal is IERC777Recipient{
         snatchInfo.snatchCount = 0;
     }
 
-    function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count) view public returns(uint256){
-        return _amount.add(_amount.mul(_rate.mul(_count.div(100)).div(100)));
+    function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count) pure public returns(uint256){
+        return _amount.add(_amount.mul(_rate.mul(_count.div(100))).div(100));
     }
    
     function safeTransferFrom(address token, address from, address to, uint value) internal {
