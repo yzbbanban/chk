@@ -76,9 +76,9 @@ contract Ticket1155Nft is ERC1155 {
 
     address owner;
     // Contract name
-    string public name="TTTTT Token";
+    string public name="CHKR Token";
     // Contract symbol
-    string public symbol="TTTT";
+    string public symbol="CHKR";
 
     // Mapping from owner to list of owned token IDs
     mapping(address => uint256[]) private _ownedTokens;

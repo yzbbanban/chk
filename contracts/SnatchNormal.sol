@@ -36,6 +36,8 @@ contract SnatchNormal is IERC777Recipient{
     mapping(uint256=>SnatchInfo) public snatchInfoMap;
 
     mapping (address=>uint256[]) public selfSnatchInfoMap;
+    //cfx 兑换比例，1cfx兑换多少代币
+    mapping (uint256=>uint256) public exchangeRate;
 
     struct SnatchInfo{
         address token;//
@@ -166,6 +168,12 @@ contract SnatchNormal is IERC777Recipient{
         emit AddSnatch(msg.sender,id);
     }
 
+    function setExchangeRateById(uint256 _rate, uint256 _id) public{
+        SnatchInfo storage snatchInfo = snatchInfoMap[_id];
+        require(msg.sender==snatchInfo.owner,"Must id owner");
+        exchangeRate[_id]=_rate;
+    }
+
     function getSnatchList() view public returns(uint256[] memory){
         return snatchlist;
     }
@@ -253,6 +261,32 @@ contract SnatchNormal is IERC777Recipient{
         snatchInfo.snatchCount = 0;
     }
 
+
+    function exchangeRest(uint256 _id) payable public{
+        SnatchInfo storage snatchInfo = snatchInfoMap[_id];
+        require(snatchInfo.time[0] == 0,"Not over");
+        uint256 _amount = msg.value;
+        require( _amount > 0,"Amount error");
+        //发送
+        uint256 rate = exchangeRate[_id];
+        require(rate > 0,"Exchange rate not set");
+        //1cfx 兑换 rate 代币
+        uint256 exchangeAmount = _amount.mul(rate).div(1e18);
+        require(snatchInfo.amount >= exchangeAmount,"No amount");
+        IERC777 it = IERC777(snatchInfo.token);
+        it.send(msg.sender, _amount, "");
+        //兑换cfx
+        snatchInfo.amount = snatchInfo.amount.sub(_amount);
+    }
+
+    function getPlatformCoin(uint256 _amount,uint256 _id) public{
+        SnatchInfo storage snatchInfo = snatchInfoMap[_id];
+        require(msg.sender == snatchInfo.owner,"Must id owner");
+        uint256 platformReward = _amount.mul(50).div(100);
+        transferEth(msg.sender,platformReward,"Exchange rest transfer error");
+        transferEth(snatchNormalOwner,_amount.sub(platformReward),"Exchange rest transfer error");
+    }
+
     function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count) pure public returns(uint256){
         return _amount.add(_amount.mul(_rate.mul(_count.div(100))).div(100));
     }
@@ -263,6 +297,12 @@ contract SnatchNormal is IERC777Recipient{
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'TRANSFER_FROM_FAILED');
     }
+
+    function transferEth(address _address, uint256 _value,string memory message) internal{
+        (bool res, ) = address(uint160(_address)).call{value:_value}("");
+        require(res,message);
+    }
+
 
     function tokensReceived(
       address operator,
@@ -275,4 +315,5 @@ contract SnatchNormal is IERC777Recipient{
         givers[from] += amount;
     }
 
+    receive() external payable {}
 }

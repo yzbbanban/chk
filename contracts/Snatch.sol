@@ -3,12 +3,18 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./SponsorWhitelistControl.sol";
 import "./InviteInterface.sol";
 
-contract Snatch{
+import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
+import "@openzeppelin/contracts/token/ERC777/IERC777.sol";
+import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
+
+contract Snatch is IERC777Recipient{
 
     event SnatchPool(address _addr,uint256 _amount);
     event WithdrawPool(address _owner, address _addr,uint256 _amount);
 
     address[] public winnerAddresses;
+
+    mapping(address => uint256) public givers;
 
     using SafeMath for uint256;
 
@@ -41,6 +47,8 @@ contract Snatch{
 
     InviteInterface invite;
 
+    address public iERC777;
+
     Winner[] public winners;
 
     mapping(address => Winner[]) public winnerMap;
@@ -70,15 +78,25 @@ contract Snatch{
         uint256 winTime;
     }
 
+    IERC1820Registry private _erc1820 = IERC1820Registry(0x88887eD889e776bCBe2f0f9932EcFaBcDfCd1820);
+
+    // keccak256("ERC777TokensRecipient")
+    bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH =
+        0xb281fc8c12954d22544db45de3159a39272895b169a852b314f9cc762e44c53b;
+
+
     SponsorWhitelistControl public constant SPONSOR = SponsorWhitelistControl(
         address(0x0888000000000000000000000000000000000001)
     );
 
-    constructor(InviteInterface _invite) public{
+    constructor(InviteInterface _invite,address _ierc777) public{
+        _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
+        
         snatchOwner = msg.sender;
         platformAddress = msg.sender;
         snatchInfo = SnatchInfo(address(0),address(0),0,submitAmount,0,0);
         invite = _invite;
+        iERC777 = _ierc777;
         // register all users as sponsees
         address[] memory users = new address[](1);
         users[0] = address(0);
@@ -290,14 +308,46 @@ contract Snatch{
         snatchCount = 0;
     }
    
+    function exchangeRest(uint256 _amount) public{
+        require(snatchInfo.startTime == 0,"Not over");
+        require(snatchInfo.amount > 0,"No amount");
+        //发送
+        safeTransferFrom(iERC777,msg.sender,address(this), _amount);
+        //兑换cfx
+        transferEth(msg.sender,_amount,"Exchange rest transfer error");
+        snatchInfo.amount = snatchInfo.amount.sub(_amount);
+    }
+
+    function getPlatformCoin(uint256 _amount) public onlyOwner(){
+        IERC777 it = IERC777(iERC777);
+        it.send(address(this), _amount, "");
+    }
 
     function transferEth(address _address, uint256 _value,string memory message) internal{
         (bool res, ) = address(uint160(_address)).call{value:_value}("");
         require(res,message);
     }
 
+    function safeTransferFrom(address token, address from, address to, uint value) internal {
+        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
+        //transfer ERC20 Token
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TRANSFER_FROM_FAILED');
+    }
+
     function calcRangeAmount(uint256 _amount,uint256 _rate,uint256 _count,uint256 _sCount) pure public returns(uint256){
         return _amount.add(_amount.mul(_rate.mul(_count.div(_sCount))).div(100));
+    }
+
+    function tokensReceived(
+      address operator,
+      address from,
+      address to,
+      uint amount,
+      bytes calldata userData,
+      bytes calldata operatorData
+    ) external override{
+        givers[from] += amount;
     }
 
     receive() external payable {}

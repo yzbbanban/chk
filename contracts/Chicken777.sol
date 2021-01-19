@@ -27,11 +27,11 @@ contract Chicken777 is ERC777 {
     );
 
     constructor()
-        ERC777("CKCK2 Token", "CKCK2", new address[](0))
+        ERC777("Chicken Token", "CHK", new address[](0))
         public
     {
         owner = msg.sender;
-        _mint(msg.sender, 1000000e18, "", "");
+        _mint(msg.sender, 10000e18, "", "");
         // register all users as sponsees
         address[] memory users = new address[](1);
         users[0] = address(0);
