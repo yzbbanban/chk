@@ -4,3 +4,4 @@ module.exports = function (deployer) {
   //deploy snatch, add param
   deployer.deploy(Snatch);
 };
+
