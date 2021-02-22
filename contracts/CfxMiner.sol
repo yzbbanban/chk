@@ -233,6 +233,7 @@ contract CfxMiner is Operator{
             levelCount = levelCount.add(levels[tokenIds[i]].mul(levels[tokenIds[i]]));
         }
         require(levelCount==140,"Card error");
+        require(block.timestamp < endTime,"Exchange end");
         for (uint256 j = 0; j < tokenIds.length; j++) {
             iNft.safeTransferFrom(msg.sender,address(1),tokenIds[j],1,"");
         }
