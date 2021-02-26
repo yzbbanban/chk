@@ -101,7 +101,7 @@ contract TicketNft is ERC721{
         _;
     }
 
-    constructor() public ERC721("TESTNFT token", "TESTNFT") {
+    constructor() public ERC721("JUJU token", "JUJU") {
         owner = msg.sender;
     }
 
@@ -120,6 +120,34 @@ contract TicketNft is ERC721{
     function setBaseURI(string memory _tokenURI) public onlyOwner(){
         tokenURI = _tokenURI;
     }
+
+     /**
+     * @dev See {IERC721-transferFrom}.
+     */
+    function transferFrom(address from, address to, uint256 tokenId) public virtual override {
+        super.transferFrom(from, to, tokenId);
+        _removeTokenFromOwnerEnumeration(from, tokenId);
+        _addTokenToOwnerEnumeration(to, tokenId);
+    }
+
+    /**
+     * @dev See {IERC721-safeTransferFrom}.
+     */
+    function safeTransferFrom(address from, address to, uint256 tokenId) public virtual override {
+        super.safeTransferFrom(from, to, tokenId);
+        _removeTokenFromOwnerEnumeration(from, tokenId);
+        _addTokenToOwnerEnumeration(to, tokenId);
+    }
+
+    /**
+     * @dev See {IERC721-safeTransferFrom}.
+     */
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public virtual override {
+        super.safeTransferFrom(from, to, tokenId, _data);
+        _removeTokenFromOwnerEnumeration(from, tokenId);
+        _addTokenToOwnerEnumeration(to, tokenId);
+    }
+
 
     function awardItem(address player)
         public  onlyMiner()

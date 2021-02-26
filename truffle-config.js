@@ -13,7 +13,7 @@ module.exports = {
            gas:10000000,
            network_id: "*",  
            type: "conflux",     
-           privateKeys: ["0x1cdcf087515394da43e335a938463bfc4bc46d90736fac52e98b3b1afe040e35"], 
+        //    privateKeys: [""], 
         },
         wtest: {
           host: "wallet-test.confluxrpc.org",
@@ -21,7 +21,7 @@ module.exports = {
           network_id: "10001",
           gas:10000000,
           type: "conflux",
-          privateKeys: ["0x1cdcf087515394da43e335a938463bfc4bc46d90736fac52e98b3b1afe040e35"], 
+        //   privateKeys: [""], 
         }
        }
 }
